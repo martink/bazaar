@@ -632,7 +632,7 @@ sub getViewVars {
     $vars->{ edit_url               } = $self->getUrl( 'func=edit' );
 
     # navigation
-    $vars->{ search_byVendorUrl     } = $bazaar->getUrl( 'func=byVendor;vendorId=' . $vars->{ 'vendor_vendorId' } );
+    $vars->{ search_byVendor_url    } = $bazaar->getUrl( 'func=byVendor;vendorId=' . $vars->{ 'vendor_vendorId' } );
     $vars->{ bazaar_url             } = $bazaar->getUrl;
 
     return $vars;
@@ -752,8 +752,16 @@ sub processPropertiesFromFormPost {
 	my $form        = $session->form;
 	my $user        = $session->user;
 	my $properties = {};
-	
-    $self->next::method( @_ );
+
+    my $errors = $self->next::method( @_ );
+
+#    my $minimumPrice = $self->getParent->get('minimumPrice');
+#    if ( $minimumPrice && $form->float('price') < $minimumPrice ) {
+#        $errors ||= [];
+#        push @{ $errors }, "Price must at least be $minimumPrice.";
+#
+#        return $errors;
+#    }
 
 	my $oldVersion  = $self->get('versionNumber');
 

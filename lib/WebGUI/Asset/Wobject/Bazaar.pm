@@ -13,6 +13,9 @@ package WebGUI::Asset::Wobject::Bazaar;
 use strict;
 use Tie::IxHash;
 use WebGUI::Utility;
+use WebGUI::Shop::Vendor;
+use WebGUI::User;
+
 use base 'WebGUI::Asset::Wobject';
 
 
@@ -27,7 +30,7 @@ sub canEdit {
 				(
 					$self->session->form->process("assetId") eq "new" && 
 					$self->session->form->process("func") eq "editSave" && 
-					$self->session->form->process("class") eq "WebGUI::Asset::Sku::BazaarItem"
+					$self->session->form->process("class") =~ m/^WebGUI::Asset::Sku::BazaarItem/
 				)
 			) && 
 			$self->canUpload( $userId )
@@ -111,6 +114,12 @@ sub definition {
             label           => 'Search results template',
             tab             => 'display',
             namespace       => 'Bazaar/Search',
+        },
+        minimumPrice => {
+            fieldType       => 'float',
+            defaultValue    => 0,
+            label           => 'Minimum price for Bazaar Items',
+            tab             => 'properties',
         },
 	);
 	push(@{$definition}, {
@@ -278,14 +287,23 @@ sub generateShortListLoop {
                 push @previewFilesLoop, $screenProperties;
             }
         }
+        
+        my $vendor     = WebGUI::Shop::Vendor->new( $session, $asset->get('vendorId') );
+        my $vendorName = $vendor->get('name') unless ( WebGUI::Error->caught || $vendor->get('name') eq 'Default Vendor' );
 
-        my $itemProperties = $asset->get;
+#        my $itemProperties  = $asset->get;
+        my $itemProperties  = $asset->getViewVars;
         my %item = map { ("item_$_" => $itemProperties->{ $_ }) } keys %{ $itemProperties };
+        $item{ item_price               } = sprintf '%.2f', $item{ item_price };
         $item{ item_title               } = $asset->getTitle;
         $item{ item_url                 } = $asset->getUrl;
         $item{ item_previewImages_loop  } = \@previewImagesLoop;
         $item{ item_previewFiles_loop   } = \@previewFilesLoop;
         $item{ item_rating_icon         } = $asset->getAverageCommentRatingIcon;
+        $item{ item_addToCart_form      } = $asset->getAddToCartForm; 
+        $item{ item_keyword_loop        } = $asset->getKeywordLoopVars;
+        $item{ item_username            } = WebGUI::User->new( $session, $asset->get('ownerUserId') )->username;
+        $item{ item_vendorName          } = $vendorName;
 
         push @shortList, \%item;
     }
