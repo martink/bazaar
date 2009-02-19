@@ -304,6 +304,7 @@ sub generateShortListLoop {
         $item{ item_keyword_loop        } = $asset->getKeywordLoopVars;
         $item{ item_username            } = WebGUI::User->new( $session, $asset->get('ownerUserId') )->username;
         $item{ item_vendorName          } = $vendorName;
+        $item{ item_vendor_searchUrl    } = $self->getUrl( 'func=byVendor;vendorId='.$vendor->getId );
 
         push @shortList, \%item;
     }
