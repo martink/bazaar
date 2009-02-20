@@ -31,7 +31,6 @@ use WebGUI::Storage::Image;
 use WebGUI::User;
 use WebGUI::Utility qw/isIn/;
 
-
 =head1 NAME
 
 Package WebGUI::Asset::Sku::BazaarItem
@@ -238,7 +237,8 @@ sub getAddToCartForm {
 #-------------------------------------------------------------------
 sub getAutoCommitWorkflowId {
 	my $self = shift;
-	return qw( pbworkflow000000000003 );
+
+    return $self->getParent->get('approvalWorkflowId') || 'pbworkflow000000000003';
 }
 
 #-------------------------------------------------------------------

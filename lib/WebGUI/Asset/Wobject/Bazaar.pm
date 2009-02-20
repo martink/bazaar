@@ -121,6 +121,13 @@ sub definition {
             label           => 'Minimum price for Bazaar Items',
             tab             => 'properties',
         },
+        approvalWorkflowId => {
+            fieldType       => 'workflow',
+            defaultValue    => 'pbworkflow000000000003',
+            label           => 'Bazaar Item approval workflow',
+            type            => 'WebGUI::VersionTag',
+            tab             => 'security',
+        },
 	);
 	push(@{$definition}, {
 		assetName=>'Bazaar',

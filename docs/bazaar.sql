@@ -32,5 +32,6 @@ create table bazaar (
     bazaarItemTemplateId char(22) binary not null default 'VlkZo8ew56Yns_6WMIU8BQ',
     searchTemplateId char(22) binary not null default 'ddc-E8lgRHBsSzOSr4aNrw',
     minimumPrice float(9,2) not null default '0.00',
+    approvalWorkflowId char(22) binary default 'pbworkflow000000000003',
 	primary key (assetId, revisionDate)
 );
