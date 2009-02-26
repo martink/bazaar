@@ -208,6 +208,11 @@ sub definition {
 			fieldType       => "hidden",
 			defaultValue    => 0,
 			},
+        vendorPayoutPercentage => {
+            fieldType       => 'integer',
+            label           => 'Vendor payout percentage',
+            defaultValue    => undef,
+            },
 	    );
 	push(@{$definition}, {
 		assetName           => 'Bazaar Item',
@@ -411,6 +416,14 @@ sub getEditForm {
         value   	=> $self->get('price'),
 		defaultValue	=> 0.00,
  	);
+    if ($self->getParent->canEdit) {
+       $f->integer(
+           label       => 'Vendor payout percentage',
+           name        => 'vendorPayoutPercentage',
+           value       => $self->get('vendorPayoutPercentage'),
+           defaultValue => $self->getParent->get('defaultVendorPayoutPercentage'),
+       );
+    }
 	$f->interval(
 		label		=> 'Download Period',
         name		=> 'downloadPeriod',
@@ -639,6 +652,13 @@ sub getViewVars {
 }
 
 #-------------------------------------------------------------------
+sub getVendorPayout {
+    my $self = shift;
+
+    return $self->getPrice / $self->get('vendorPayoutPercentage') * 100;
+}
+
+#-------------------------------------------------------------------
 sub indexContent {
 	my $self = shift;
 	my $indexer = $self->next::method;
@@ -769,6 +789,17 @@ sub processPropertiesFromFormPost {
 		$properties->{ownerUserId} = $user->userId;
 	}
 
+    # Process the vendor payout percentage only if the user is managing the bazaar.
+    if ( $self->getParent->canEdit ) {
+        my $percentage = $form->integer( 'vendorPayoutPercentage' );
+
+        $percentage = 0     if $percentage < 0;
+        $percentage = 100   if $percentage > 100;
+
+        $properties->{ vendorPayoutPercentage } = $percentage;
+    }
+
+    # Handle submitted vendor data.
 	if ( !$user->isAdmin && $self->getParent->getValue('autoCreateVendors') ) {
 		my %vendorInfo = (
 			preferredPaymentType	=> $form->get( 'vendorPaymentMethod', 'selectBox', 'PayPal' ),

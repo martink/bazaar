@@ -128,6 +128,13 @@ sub definition {
             type            => 'WebGUI::VersionTag',
             tab             => 'security',
         },
+        defaultVendorPayoutPercentage => {
+            fieldType       => 'integer',
+            defaultValue    => 0,
+            tab             => 'security',
+            label           => 'Default vendor payout percentage',
+            hoverHelp       => 'This is the vendor percentage that is used by default by bazaar items',
+        },
 	);
 	push(@{$definition}, {
 		assetName=>'Bazaar',
@@ -406,6 +413,21 @@ sub prepareView {
     my $template = WebGUI::Asset::Template->new( $self->session, $self->getValue('templateId') );
     $template->prepare;
     $self->{_template} = $template;
+}
+
+#-------------------------------------------------------------------
+sub processPropertiesFromFormPost {
+    my $self = shift;
+
+    my $output = $self->SUPER::processPropertiesFromFormPost;
+
+    my $percentage = $self->session->integer( 'defaultVendorPayoutPercentage' );
+    $percentage = 0     if $percentage < 0;
+    $percentage = 100   if $percentage > 100;
+
+    $self->update( {
+        defaultVendorPayoutPercentage   => $percentage,
+    } );
 }
 
 #-------------------------------------------------------------------
