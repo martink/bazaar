@@ -655,7 +655,7 @@ sub getViewVars {
 sub getVendorPayout {
     my $self = shift;
 
-    return $self->getPrice / $self->get('vendorPayoutPercentage') * 100;
+    return $self->getPrice * $self->get('vendorPayoutPercentage') / 100;
 }
 
 #-------------------------------------------------------------------
