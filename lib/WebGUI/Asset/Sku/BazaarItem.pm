@@ -652,6 +652,13 @@ sub getViewVars {
 }
 
 #-------------------------------------------------------------------
+sub getVendorId {
+    my $self = shift;
+
+    return $self->get('vendorId');
+}
+
+#-------------------------------------------------------------------
 sub getVendorPayout {
     my $self = shift;
 

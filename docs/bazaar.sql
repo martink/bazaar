@@ -18,6 +18,7 @@ create table bazaarItem (
 	averageRating float,
 	views int not null default 0,
 	downloads int not null default 0,
+    vendorPayoutPercentage int(3) default 0,
 	primary key (assetId, revisionDate)
 );
 
@@ -33,5 +34,6 @@ create table bazaar (
     searchTemplateId char(22) binary not null default 'ddc-E8lgRHBsSzOSr4aNrw',
     minimumPrice float(9,2) not null default '0.00',
     approvalWorkflowId char(22) binary default 'pbworkflow000000000003',
+    defaultVendorPayoutPercentage int(3) default 0,
 	primary key (assetId, revisionDate)
 );
