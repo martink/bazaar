@@ -909,6 +909,13 @@ Displays the product.
 sub view {
     my $self = shift;
 
+    # Increment views counter. Doing that this was could give concurrency issues, resulting in uncounted views. The
+    # probabilty of this happening is low, though, and the issue itself is not critical, so for now this is an ok
+    # way of doing things.
+    $self->update( { 
+        views => $self->get('views') + 1 
+    } );
+
     my $template = $self->{ _viewTemplate };
     return $template->process( $self->getViewVars );
 }
