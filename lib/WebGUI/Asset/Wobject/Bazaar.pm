@@ -309,7 +309,7 @@ sub generateShortListLoop {
         my $itemProperties  = $asset->getViewVars;
         my %item = map { ("item_$_" => $itemProperties->{ $_ }) } keys %{ $itemProperties };
         $item{ item_price               } = sprintf '%.2f', $item{ item_price };
-        $item{ item_title               } = $asset->getTitle. '['.$asset->getVendorPayout.']';
+        $item{ item_title               } = $asset->getTitle;
         $item{ item_url                 } = $asset->getUrl;
         $item{ item_previewImages_loop  } = \@previewImagesLoop;
         $item{ item_previewFiles_loop   } = \@previewFilesLoop;
