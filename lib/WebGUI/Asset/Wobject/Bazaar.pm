@@ -15,6 +15,7 @@ use Tie::IxHash;
 use WebGUI::Utility;
 use WebGUI::Shop::Vendor;
 use WebGUI::User;
+use WebGUI::Search;
 
 use base 'WebGUI::Asset::Wobject';
 
@@ -491,6 +492,22 @@ sub www_byRecent {
 	my $self = shift;
 	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem order by revisionDate desc");
 	return $self->formatList($ids, 'Recently Updated');
+}
+
+#-------------------------------------------------------------------
+sub www_bySearchQuery {
+    my $self    = shift;
+    my $session = $self->session;
+
+    my $search = WebGUI::Search->new( $session );
+    $search->search( {
+        keywords    => $session->form->process( 'query' ),
+        lineage     => [ $self->get('lineage') ],
+        where       => q{classname like 'WebGUI::Asset::Sku::BazaarItem%'},
+    } );
+    my $ids = $search->getAssetIds;
+
+    return $self->formatList( $ids, 'Search results' );
 }
 
 #-------------------------------------------------------------------
