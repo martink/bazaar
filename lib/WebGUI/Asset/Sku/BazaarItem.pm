@@ -416,7 +416,7 @@ sub getEditForm {
         value   	=> $self->get('price'),
 		defaultValue	=> 0.00,
  	);
-    if ($self->getParent->canEdit) {
+    if ($self->getParent->canSetVendorPayout) {
        $f->integer(
            label       => 'Vendor payout percentage',
            name        => 'vendorPayoutPercentage',
@@ -797,7 +797,7 @@ sub processPropertiesFromFormPost {
 	}
 
     # Process the vendor payout percentage only if the user is managing the bazaar.
-    if ( $self->getParent->canEdit ) {
+    if ( $self->getParent->canSetVendorPayout ) {
         my $percentage = $form->integer( 'vendorPayoutPercentage' );
 
         $percentage = 0     if $percentage < 0;

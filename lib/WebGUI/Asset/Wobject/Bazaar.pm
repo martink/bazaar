@@ -55,6 +55,13 @@ sub canUpload {
 }
 
 #-------------------------------------------------------------------
+sub canSetVendorPayout {
+    my $self = shift;
+
+    return $self->SUPER::canEdit;
+}
+
+#-------------------------------------------------------------------
 
 =head2 definition ( )
 
