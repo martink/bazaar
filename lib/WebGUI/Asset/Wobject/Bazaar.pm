@@ -153,8 +153,11 @@ sub definition {
 sub formatList {
 	my ($self, $assetIds, $title) = @_;
 	my $limit = $self->get('listLimit');
+    
+    my $func = $self->session->form->process('func');
 
     my $vars = {
+        "func_is_$func" => 1,
         title           => $title,
         url             => $self->getUrl,
         results_loop    => $self->generateShortListLoop( $assetIds ),
