@@ -418,19 +418,21 @@ sub getEditForm {
  	);
     if ($self->getParent->canSetVendorPayout) {
        $f->integer(
-           label       => 'Vendor payout percentage',
-           name        => 'vendorPayoutPercentage',
-           value       => $self->get('vendorPayoutPercentage'),
-           defaultValue => $self->getParent->get('defaultVendorPayoutPercentage'),
+            label           => 'Vendor payout percentage',
+            name            => 'vendorPayoutPercentage',
+            value           => $self->get('vendorPayoutPercentage'),
+            defaultValue    => $self->getParent->get('defaultVendorPayoutPercentage'),
        );
     }
-	$f->interval(
-		label		=> 'Download Period',
-        name		=> 'downloadPeriod',
-		hoverHelp	=> 'The amount of time the user will have to download the product and updates.',
-        value   	=> $self->get('downloadPeriod'),
-		defaultValue	=> 60*60*24*365,
- 	);
+    if ( $self->getParent->get('uploaderCanSetDownloadPeriod') ) {
+    	$f->interval(
+	        label		    => 'Download Period',
+            name		    => 'downloadPeriod',
+    		hoverHelp	    => 'The amount of time the user will have to download the product and updates.',
+            value           => $self->get('downloadPeriod'),
+		    defaultValue	=> $self->getParent->get('defaultDownloadPeriod') || 356 * 24 * 3600,  # 1 year
+     	);
+    }
 	$f->text(
 		label	=> 'Keywords',
 		subtext	=> 'eg: asset utility',
@@ -804,6 +806,17 @@ sub processPropertiesFromFormPost {
         $percentage = 100   if $percentage > 100;
 
         $properties->{ vendorPayoutPercentage } = $percentage;
+    }
+    else {
+        $properties->{ vendorPayoutPercentage } = $self->getParent->get( 'defaultVendorPayoutPercentage' );
+    }
+
+    # Process the download period
+    if ( $self->getParent->get( 'uploaderCanSetDownloadPeriod' ) || $self->getParent->canSetVendorPayout ) {
+        $properties->{ downloadPeriod } = $form->interval( 'downloadPeriod' );
+    }
+    else {
+        $properties->{ downloadPeriod } = $self->getParent->get( 'defaultDownloadPeriod' );
     }
 
     # Handle submitted vendor data.

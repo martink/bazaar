@@ -143,6 +143,20 @@ sub definition {
             label           => 'Default vendor payout percentage',
             hoverHelp       => 'This is the vendor percentage that is used by default by bazaar items',
         },
+        defaultDownloadPeriod => {
+            fieldType       => 'interval',
+            tab             => 'properties',
+            label           => 'Default download period.',
+            defaultValue    => 365 * 24 * 3600,  # 1 year
+            hoverHelp       => 'The default period that buyers are able to download their purchase',
+        },
+        uploaderCanSetDownloadPeriod => {
+            fieldType       => 'yesNo',
+            tab             => 'properties',
+            label           => 'Uploader can set download period',
+            defaultValue    => 1,
+            hoverHelp       => 'If set to yes, the uploader is allowed to set the download period.',
+        },
 	);
 	push(@{$definition}, {
 		assetName=>'Bazaar',
