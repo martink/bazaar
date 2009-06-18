@@ -488,6 +488,26 @@ sub getPrice {
 }
 
 #-------------------------------------------------------------------
+
+=head2 getPricePlusTax ( )
+
+Returns the price including the default VAT set for this sku. The default VAT is the VAT that is applied when no
+shipping address in known.
+
+=cut
+
+sub getPricePlusTax {
+    my $self    = shift;
+    my $session = $self->session;
+
+    my $taxDriver = WebGUI::Shop::Tax->getDriver( $session );
+
+    my $pricePlusTax = $self->getPrice * ( 1 + $taxDriver->getTaxRate( $self ) / 100 );
+
+    return sprintf '%.2f', $pricePlusTax;
+}
+
+#-------------------------------------------------------------------
 sub getProductLoopVars {
     my $self    = shift;
     my $storage = $self->getProductStorage;
@@ -624,6 +644,7 @@ sub getViewVars {
     $vars->{ productFiles_loop      } = $self->getProductLoopVars;
     $vars->{ screenFiles_loop       } = $self->getScreenLoopVars;
     $vars->{ price                  } = sprintf '%.2f', $self->getPrice;
+    $vars->{ pricePlusTax           } = sprintf '%.2f', $self->getPricePlusTax;
     $vars->{ hasPrice               } = $self->getPrice > 0;
     $vars->{ isInCart               } = $self->{ _hasAddedToCart };
     $vars->{ addToCart_form         } = $self->getAddToCartForm;
