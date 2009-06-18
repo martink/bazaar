@@ -16,6 +16,7 @@ use WebGUI::Utility;
 use WebGUI::Shop::Vendor;
 use WebGUI::User;
 use WebGUI::Search;
+use WebGUI::Paginator;
 
 use base 'WebGUI::Asset::Wobject';
 
@@ -173,16 +174,20 @@ sub definition {
 #-------------------------------------------------------------------
 sub formatList {
 	my ($self, $assetIds, $title) = @_;
-	my $limit = $self->get('listLimit');
-    
-    my $func = $self->session->form->process('func');
+
+	my $limit   = $self->get('listLimit');
+    my $func    = $self->session->form->process('func');
+    my $p = WebGUI::Paginator->new( $self->session, $self->session->url->page("func=$func"), $limit );
+    $p->setDataByArrayRef( $assetIds );
 
     my $vars = {
         "func_is_$func" => 1,
         title           => $title,
         url             => $self->getUrl,
-        results_loop    => $self->generateShortListLoop( $assetIds ),
+        results_loop    => $self->generateShortListLoop( $p->getPageData ),
     };
+
+    $p->appendTemplateVars( $vars );
     
     my $template = WebGUI::Asset::Template->new( $self->session, $self->getValue('searchTemplateId') );
     
