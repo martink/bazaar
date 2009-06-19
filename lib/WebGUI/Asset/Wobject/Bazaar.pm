@@ -173,11 +173,16 @@ sub definition {
 
 #-------------------------------------------------------------------
 sub formatList {
-	my ($self, $assetIds, $title) = @_;
+	my $self        = shift;
+    my $assetIds    = shift;
+    my $title       = shift;
+    my $extraParams = shift;
 
-	my $limit   = $self->get('listLimit');
-    my $func    = $self->session->form->process('func');
-    my $p = WebGUI::Paginator->new( $self->session, $self->session->url->page("func=$func"), $limit );
+	my $limit       = $self->get('listLimit');
+    my $func        = $self->session->form->process('func');
+    my $formParams  = join ';', "func=$func", $extraParams;
+
+    my $p = WebGUI::Paginator->new( $self->session, $self->session->url->page($formParams), $limit );
     $p->setDataByArrayRef( $assetIds );
 
     my $vars = {
@@ -506,7 +511,7 @@ sub www_byKeyword {
 	my $self = shift;
 	my $word = $self->session->form->get('keyword');
 	my $ids = WebGUI::Keyword->new($self->session)->getMatchingAssets({startAsset=>$self, keywords=>[$word]});
-	return $self->formatList($ids, q{Keyword: }.$word);
+	return $self->formatList($ids, q{Keyword: }.$word, "keyword=$word");
 }
 
 #-------------------------------------------------------------------
@@ -528,15 +533,16 @@ sub www_bySearchQuery {
     my $self    = shift;
     my $session = $self->session;
 
-    my $search = WebGUI::Search->new( $session );
+    my $query   = $session->form->process( 'query' );
+    my $search  = WebGUI::Search->new( $session );
     $search->search( {
-        keywords    => $session->form->process( 'query' ),
+        keywords    => $query,
         lineage     => [ $self->get('lineage') ],
         where       => q{classname like 'WebGUI::Asset::Sku::BazaarItem%'},
     } );
     my $ids = $search->getAssetIds;
 
-    return $self->formatList( $ids, 'Search results' );
+    return $self->formatList( $ids, 'Search results', "query=$query" );
 }
 
 #-------------------------------------------------------------------
@@ -552,7 +558,7 @@ sub www_byVendor {
 	my $vendorId = $self->session->form->get('vendorId');
 	my $vendor = WebGUI::Shop::Vendor->new($self->session, $vendorId);
 	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem left join sku using (assetId, revisionDate) where vendorId=? group by assetId",[$vendorId]);
-	return $self->formatList($ids, $vendor->get('name'));
+	return $self->formatList($ids, $vendor->get('name'), "vendorId=$vendorId" );
 }
 
 #-------------------------------------------------------------------
