@@ -694,6 +694,8 @@ sub indexContent {
 	my $indexer = $self->next::method;
 	$indexer->addKeywords($self->get("releaseNotes"));
 	$indexer->addKeywords($self->get("requirements"));
+
+    return $indexer;
 }
 
 #-------------------------------------------------------------------
