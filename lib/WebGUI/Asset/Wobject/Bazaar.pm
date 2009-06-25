@@ -17,6 +17,7 @@ use WebGUI::Shop::Vendor;
 use WebGUI::User;
 use WebGUI::Search;
 use WebGUI::Paginator;
+use WebGUI::Pluggable;
 
 use base 'WebGUI::Asset::Wobject';
 
@@ -512,6 +513,51 @@ sub www_byKeyword {
 	my $word = $self->session->form->get('keyword');
 	my $ids = WebGUI::Keyword->new($self->session)->getMatchingAssets({startAsset=>$self, keywords=>[$word]});
 	return $self->formatList($ids, q{Keyword: }.$word, "keyword=$word");
+}
+
+#-------------------------------------------------------------------
+sub www_byProperties {
+    my $self = shift;
+    my ($form, $db ) = $self->session->quick( qw{ form db } );
+
+    my $searchTerms = $form->paramsHashRef;
+    delete $searchTerms->{ func };
+    my @searchKeys  = grep { $searchTerms->{ $_ } ne "" } keys %{ $searchTerms };
+
+    my @classes = $db->buildArray( 'select distinct className from asset where lineage like ? and className like ?', [
+        $self->get('lineage').'%',
+        'WebGUI::Asset::Sku::BazaarItem%',
+    ] );
+
+    my (@constraints, @placeHolders, %tables);
+    foreach my $class (@classes) {
+        my $definition = WebGUI::Pluggable::instanciate( $class, 'definition', [ $self->session ] );
+        
+        foreach my $part ( @{ $definition } ) {
+            my $table = $part->{ tableName };
+
+            foreach my $key ( @searchKeys ) {
+                if ( exists $part->{ properties }->{ $key } ) {
+                    $tables{ $table } = 1;
+                    push @constraints,  "$table.$key = ?";
+                    push @placeHolders, $form->process( $key );
+                }
+            }
+        }
+    }
+
+
+    my @tables          = keys %tables;
+    my $source          = shift @tables || 'bazaarItem';
+    my $previousTable   = $source;
+
+    for my $table ( @tables ) {
+        $source .= " join $table on $previousTable.assetId = $table.assetId and $previousTable.revisionDate = $table.revisiondate ";
+    }
+    my $condition = 'where '. join ' AND ', @constraints if @constraints;
+
+    my $assetIds = $db->buildArrayRef( "select distinct assetId from $source $condition", \@placeHolders );
+    return $self->formatList( $assetIds, 'Search Result', join( ';', map { "$_=$searchTerms->{ $_ }" } keys %{ $searchTerms } ) );
 }
 
 #-------------------------------------------------------------------
