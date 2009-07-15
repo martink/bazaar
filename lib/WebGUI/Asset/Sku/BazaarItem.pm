@@ -73,6 +73,13 @@ sub canEdit {
 }
 
 #-------------------------------------------------------------------
+sub canEditIfLocked {
+    my $self = shift;
+
+    return $self->SUPER::canEditIfLocked || $self->getParent->canEdit;
+}
+
+#-------------------------------------------------------------------
 
 =head2 canView ( )
 
@@ -519,6 +526,7 @@ sub getProductLoopVars {
             product_filename    => $file,
             product_downloadUrl => $self->getUrl( 'func=download;filename=' . $file ),
             product_url         => $storage->getUrl( $file ),
+            product_size        => sprintf( '%.1f', $storage->getFileSize( $file ) / (1024*1024) ),
         };
     }
 
@@ -807,13 +815,13 @@ sub processPropertiesFromFormPost {
 
     my $errors = $self->next::method( @_ );
 
-#    my $minimumPrice = $self->getParent->get('minimumPrice');
-#    if ( $minimumPrice && $form->float('price') < $minimumPrice ) {
-#        $errors ||= [];
-#        push @{ $errors }, "Price must at least be $minimumPrice.";
-#
-#        return $errors;
-#    }
+    # Enforce minimum price
+    my $minimumPrice = $self->getParent->get('minimumPrice');
+    my $price        = $form->float('price');
+    if ( $price < $minimumPrice ) {
+        $price = $minimumPrice;
+    }
+    $properties->{ price } = $price;
 
 	my $oldVersion  = $self->get('versionNumber');
 
