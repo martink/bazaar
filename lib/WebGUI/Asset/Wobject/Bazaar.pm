@@ -338,11 +338,8 @@ sub generateShortListLoop {
             }
         }
         
-        my $vendor     = WebGUI::Shop::Vendor->new( $session, $asset->get('vendorId') );
-        my $vendorName = $vendor->get('name') unless ( WebGUI::Error->caught || $vendor->get('name') eq 'Default Vendor' );
-
-#        my $itemProperties  = $asset->get;
         my $itemProperties  = $asset->getViewVars;
+
         my %item = map { ("item_$_" => $itemProperties->{ $_ }) } keys %{ $itemProperties };
         $item{ item_price               } = sprintf '%.2f', $item{ item_price };
         $item{ item_title               } = $asset->getTitle;
@@ -353,8 +350,15 @@ sub generateShortListLoop {
         $item{ item_addToCart_form      } = $asset->getAddToCartForm; 
         $item{ item_keyword_loop        } = $asset->getKeywordLoopVars;
         $item{ item_username            } = WebGUI::User->new( $session, $asset->get('ownerUserId') )->username;
-        $item{ item_vendorName          } = $vendorName;
-        $item{ item_vendor_searchUrl    } = $self->getUrl( 'func=byVendor;vendorId='.$vendor->getId );
+
+        my $vendor  = eval { WebGUI::Shop::Vendor->new( $session, $asset->get('vendorId') ) };
+        my $e       = Exception::Class->caught();
+        unless ($e) {
+            my $vendorName = $vendor->get('name') unless $vendor->get('name') eq 'Default Vendor' ;
+
+            $item{ item_vendorName          } = $vendorName;
+            $item{ item_vendor_searchUrl    } = $self->getUrl( 'func=byVendor;vendorId='.$vendor->getId );
+        }
 
         push @shortList, \%item;
     }

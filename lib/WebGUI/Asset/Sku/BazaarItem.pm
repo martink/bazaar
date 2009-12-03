@@ -634,7 +634,7 @@ sub getViewVars {
     my $vars    = $self->get;
 
     # Fetch vendor information
-    my $vendor      = WebGUI::Shop::Vendor->new( $session, $self->get('vendorId') );
+    my $vendor      = eval { WebGUI::Shop::Vendor->new( $session, $self->get('vendorId') ) };
     unless (WebGUI::Error->caught || $vendor->get('name') eq 'Default Vendor') {
         my $vendorInfo  = $vendor->get;
         foreach my $key (keys %{ $vendorInfo }) {
