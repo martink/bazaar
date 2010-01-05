@@ -490,32 +490,56 @@ sub view {
 
 #-------------------------------------------------------------------
 sub www_byCreation {
-	my $self = shift;
-	my $ids = $self->session->db->buildArrayRef("select assetId from asset where parentId=?
-		and className like 'WebGUI::Asset::Sku::BazaarItem%'
-		order by creationDate desc", [$self->getId]);
+	my $self    = shift;
+
+    my $ids     = $self->getLineage( [ 'children' ], {
+        returnObjects   => 0,
+        isa             => 'WebGUI::Asset::Sku::BazaarItem',
+        orderByClause   => 'creationDate desc',
+    } );
+#	my $ids = $self->session->db->buildArrayRef("select distinct asset.assetId from asset, assetData where
+#    asset.assetId=assetData.assetId and status='approved' and state='published' and parentId=?
+#		and className like 'WebGUI::Asset::Sku::BazaarItem%'
+#		order by creationDate desc", [$self->getId]);
 	return $self->formatList($ids,'New in the Bazaar');
 }
 
 #-------------------------------------------------------------------
 sub www_byDownloads {
-	my $self = shift;
-	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem where revisionDate > unix_timestamp() - 60*60*24*365*2 order by downloads desc");
+	my $self    = shift;
+
+    my $ids     = $self->getLineage( [ 'children' ], {
+        returnObjects   => 0,
+        isa             => 'WebGUI::Asset::Sku::BazaarItem',
+        joinClass       => 'WebGUI::Asset::Sku::BazaarItem',
+        whereClause     => 'assetData.revisionDate > unix_timestamp() - 60*60*24*365*2',
+        orderByClause   => 'downloads desc',
+    } );
+#	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem where revisionDate > unix_timestamp() - 60*60*24*365*2 order by downloads desc");
 	return $self->formatList($ids,'Most Downloaded');
 }
 
 #-------------------------------------------------------------------
 sub www_byFeatured {
-	my $self = shift;
-	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem where price > 0 and revisionDate > unix_timestamp() - 60*60*24*365*2 order by revisionDate desc");
+	my $self    = shift;
+    my $ids     = $self->getLineage( [ 'children' ], {
+        returnObjects   => 0,
+        isa             => 'WebGUI::Asset::Sku::BazaarItem',
+        joinClass       => 'WebGUI::Asset::Sku::BazaarItem',
+        whereClause     => 'price > 0 and assetData.revisionDate > unix_timestamp() - 60*60*24*365*2',
+        orderByClause   => 'revisionDate desc',
+    } );
+#	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem where price > 0 and revisionDate > unix_timestamp() - 60*60*24*365*2 order by revisionDate desc");
 	return $self->formatList($ids,'Featured');
 }
 
 #-------------------------------------------------------------------
 sub www_byKeyword {
-	my $self = shift;
-	my $word = $self->session->form->get('keyword');
-	my $ids = WebGUI::Keyword->new($self->session)->getMatchingAssets({startAsset=>$self, keywords=>[$word]});
+	my $self    = shift;
+	my $word    = $self->session->form->get('keyword');
+
+    # TODO: Check whether only viewable assets are being returned
+	my $ids     = WebGUI::Keyword->new($self->session)->getMatchingAssets({startAsset=>$self, keywords=>[$word]});
 	return $self->formatList($ids, q{Keyword: }.$word, "keyword=$word");
 }
 
@@ -524,6 +548,8 @@ sub www_byProperties {
     my $self = shift;
     my ($form, $db ) = $self->session->quick( qw{ form db } );
 
+    # TODO: Build in check to make sure assets are viewable.
+    
     my $searchTerms = $form->paramsHashRef;
     delete $searchTerms->{ func };
     my @searchKeys  = grep { $searchTerms->{ $_ } ne "" } keys %{ $searchTerms };
@@ -574,7 +600,14 @@ sub www_byRating {
 #-------------------------------------------------------------------
 sub www_byRecent {
 	my $self = shift;
-	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem order by revisionDate desc");
+
+    my $ids     = $self->getLineage( [ 'children' ], {
+        returnObjects   => 0,
+        isa             => 'WebGUI::Asset::Sku::BazaarItem',
+        orderByClause   => 'revisionDate desc',
+    } );
+
+	#my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem order by revisionDate desc");
 	return $self->formatList($ids, 'Recently Updated');
 }
 
@@ -606,16 +639,25 @@ sub www_byViews {
 sub www_byVendor {
 	my $self        = shift;
 	my $vendorId    = $self->session->form->get( 'vendorId');
-	my $vendor      = WebGUI::Shop::Vendor->new( $self->session, $vendorId ) || return "Invalid vendor";
+    my $vendor      = WebGUI::Shop::Vendor->new( $self->session, $vendorId ) || return "Invalid vendor";
 
-    my $ids = $self->session->db->buildArrayRef(
-         " select assetId from bazaarItem left join sku using (assetId, revisionDate) "
-        ." where vendorId=? and revisionDate = (select max(revisionDate) from sku where assetId=bazaarItem.assetId) "
-        ." group by assetId ",
-        [
-            $vendorId
-        ],
-    );
+    my $db          = $self->session->db;
+
+    my $ids     = $self->getLineage( [ 'children' ], {
+        returnObjects   => 0,
+        isa             => 'WebGUI::Asset::Sku::BazaarItem',
+        joinClass       => 'WebGUI::Asset::Sku',
+        whereClause     => 'vendorId=' . $db->dbh->quote( $vendorId ),
+        orderByClause   => 'revisionDate desc',
+    } );
+#    my $ids = $self->session->db->buildArrayRef(
+#         " select assetId from bazaarItem left join sku using (assetId, revisionDate) "
+#        ." where vendorId=? and revisionDate = (select max(revisionDate) from sku where assetId=bazaarItem.assetId) "
+#        ." group by assetId ",
+#        [
+#            $vendorId
+#        ],
+#    );
 
 	return $self->formatList($ids, $vendor->get('name'), "vendorId=$vendorId" );
 }
