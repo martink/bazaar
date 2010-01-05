@@ -604,10 +604,19 @@ sub www_byViews {
 
 #-------------------------------------------------------------------
 sub www_byVendor {
-	my $self = shift;
-	my $vendorId = $self->session->form->get('vendorId');
-	my $vendor = WebGUI::Shop::Vendor->new($self->session, $vendorId);
-	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem left join sku using (assetId, revisionDate) where vendorId=? group by assetId",[$vendorId]);
+	my $self        = shift;
+	my $vendorId    = $self->session->form->get( 'vendorId');
+	my $vendor      = WebGUI::Shop::Vendor->new( $self->session, $vendorId ) || return "Invalid vendor";
+
+    my $ids = $self->session->db->buildArrayRef(
+         " select assetId from bazaarItem left join sku using (assetId, revisionDate) "
+        ." where vendorId=? and revisionDate = (select max(revisionDate) from sku where assetId=bazaarItem.assetId) "
+        ." group by assetId ",
+        [
+            $vendorId
+        ],
+    );
+
 	return $self->formatList($ids, $vendor->get('name'), "vendorId=$vendorId" );
 }
 
