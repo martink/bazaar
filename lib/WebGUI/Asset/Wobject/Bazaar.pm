@@ -593,6 +593,13 @@ sub www_byProperties {
 #-------------------------------------------------------------------
 sub www_byRating {
 	my $self = shift;
+
+#    my $ids     = $self->getLineage( [ 'children' ], {
+#        returnObjects   => 0,
+#        isa             => 'WebGUI::Asset::Sku::BazaarItem',
+#        joinClass       => 'WebGUI::AssetAspect::Comments',
+#        orderByClause   => 'averageCommentRating desc',
+#    } );
 	my $ids = $self->session->db->buildArrayRef("select distinct assetId from bazaarItem left join assetAspectComments using (assetId,revisionDate) where revisionDate > unix_timestamp() - 60*60*24*365*2 order by averageCommentRating desc");
 	return $self->formatList($ids, 'Best Rated');
 }
