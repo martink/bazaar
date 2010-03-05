@@ -562,10 +562,13 @@ sub getScreenLoopVars {
 
     my @screenFiles;
     foreach my $file ( @{ $storage->getFiles } ) {
+        my $ext = $file =~ m{\.([^.]+)$}i;
         push @screenFiles, {
             screen_filename     => $file,
             screen_url          => $storage->getUrl( $file ),
             screen_thumbnailUrl => $storage->getThumbnailUrl( $file ),
+            screen_isImage      => $storage->isImage( $file ),
+            "screen_is$ext"     => 1,
         };
     }
 
