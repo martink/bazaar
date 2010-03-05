@@ -521,10 +521,12 @@ sub getProductLoopVars {
 
     my @productFiles;
     foreach my $file ( @{ $storage->getFiles } ) {
+        my $revision = ';revision=' . $self->get('revisionDate') if $self->isLocked;
+
         push @productFiles, {
             product_icon        => $storage->getFileIconUrl( $file ),
             product_filename    => $file,
-            product_downloadUrl => $self->getUrl( 'func=download;filename=' . $file ),
+            product_downloadUrl => $self->getUrl( 'func=download;filename=' . $file . $revision ),
             product_url         => $storage->getUrl( $file ),
             product_size        => sprintf( '%.1f', $storage->getFileSize( $file ) / (1024*1024) ),
         };
