@@ -18,9 +18,9 @@ use WebGUI::User;
 use WebGUI::Search;
 use WebGUI::Paginator;
 use WebGUI::Pluggable;
+use Class::C3;
 
-use base 'WebGUI::Asset::Wobject';
-
+use base qw{ WebGUI::AssetAspect::RssFeed WebGUI::Asset::Wobject };
 
 #-------------------------------------------------------------------
 sub canEdit {
@@ -38,7 +38,7 @@ sub canEdit {
 			) && 
 			$self->canUpload( $userId )
 		) || # account for new items
-		$self->SUPER::canEdit( $userId )
+		$self->next::method( $userId )
 	);
 }
 
@@ -53,14 +53,20 @@ sub canUpload {
         return 0 unless $vendor;
     }
 
-	return $session->user->isInGroup($self->get('groupToUpload')) || $self->SUPER::canEdit;
+    my $canUpload = 
+           $session->user->isInGroup($self->get('groupToUpload')) 
+        || $self->WebGUI::Asset::Wobject::canEdit;  # We must call the super class' canEdit since our own can call
+                                                    # canUpload which results in an infinite loop.
+
+	return $canUpload;
 }
 
 #-------------------------------------------------------------------
+
 sub canSetVendorPayout {
     my $self = shift;
 
-    return $self->SUPER::canEdit;
+    return $self->WebGUI::Asset::Wobject::canEdit;
 }
 
 #-------------------------------------------------------------------
@@ -160,15 +166,16 @@ sub definition {
             hoverHelp       => 'If set to yes, the uploader is allowed to set the download period.',
         },
 	);
-	push(@{$definition}, {
-		assetName=>'Bazaar',
-		icon=>'assets.gif',
-		autoGenerateForms=>1,
-		tableName=>'bazaar',
-		className=>'WebGUI::Asset::Wobject::Bazaar',
-		properties=>\%properties
-		});
-        return $class->SUPER::definition($session, $definition);
+    push(@{$definition}, {
+        assetName           => 'Bazaar',
+        icon                => 'assets.gif',
+        autoGenerateForms   => 1,
+        tableName           => 'bazaar',
+        className           => 'WebGUI::Asset::Wobject::Bazaar',
+        properties          => \%properties
+    });
+
+    return $class->next::method( $session, $definition );
 }
 
 
@@ -413,6 +420,36 @@ sub getViewVars {
 	return $vars;
 }
 
+#-------------------------------------------------------------------
+sub getRssFeedItems {
+    my $self    = shift;
+    my $session = $self->session;
+
+    my $items   = $self->getLineage( [ 'children' ], {
+        returnObjects   => 1,
+        isa             => 'WebGUI::Asset::Sku::BazaarItem',
+        orderByClause   => 'revisionDate desc',
+        limit           => $self->get( 'itemsPerFeed' ), 
+    } );
+
+    my @feed;
+    foreach my $item ( @$items ) {
+        my $user    = WebGUI::User->new( $session, $item->get('ownerUserId') );
+        my $title   = $item->get('title');
+        $title     .= ' by ' . $user->username if $user;
+
+        push @feed, {
+            'title'         => $title,
+            'description'   => $item->get('description'),
+            'link'          => $session->url->getSiteURL . $item->getUrl,
+            'pubDate'       => $session->datetime->epochToMail( $item->get('lastModified') ),
+#            'author'        => WebGUI::User->new( $session, $item->get('ownerUserId') )->username,
+            'guid'          => $session->url->getSiteURL . $item->getUrl, #$item->getId,
+       };
+    }
+
+    return \@feed;
+}
 
 ##-------------------------------------------------------------------
 #sub formatShortList {
@@ -448,7 +485,7 @@ sub getViewVars {
 #-------------------------------------------------------------------
 sub prepareView {
 	my $self = shift;
-	$self->SUPER::prepareView;
+	$self->next::method;
 
     my $template = WebGUI::Asset::Template->new( $self->session, $self->getValue('templateId') );
     $template->prepare;
@@ -459,7 +496,7 @@ sub prepareView {
 sub processPropertiesFromFormPost {
     my $self = shift;
 
-    my $output = $self->SUPER::processPropertiesFromFormPost;
+    my $output = $self->next::method;
 
     my $percentage = $self->session->integer( 'defaultVendorPayoutPercentage' );
     $percentage = 0     if $percentage < 0;
@@ -689,9 +726,8 @@ sub www_editSave {
 		return $self->getParent->www_view;
     }    
 
-    return $self->SUPER::www_editSave(@_);
+    return $self->next::method( @_ );
 }
 
-
-
 1;
+
