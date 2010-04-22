@@ -818,6 +818,11 @@ sub processPropertiesFromFormPost {
 	my $user        = $session->user;
 	my $properties = {};
 
+    my $ownerId     = $self->get('ownerUserId');
+    if ( $ownerId eq '3' && $user->userId ne '3' ) {
+        $ownerId = $user->userId;
+    }
+
     my $errors = $self->next::method( @_ );
 
     # Enforce minimum price
@@ -831,7 +836,7 @@ sub processPropertiesFromFormPost {
 	my $oldVersion  = $self->get('versionNumber');
 
 	if ( $self->get('ownerUserId') eq '3' ) {
-		$properties->{ownerUserId} = $user->userId;
+		$properties->{ownerUserId} = $ownerId;
 	}
 
     # Process the vendor payout percentage only if the user is managing the bazaar.
