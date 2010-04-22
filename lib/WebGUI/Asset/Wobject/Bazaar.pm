@@ -442,7 +442,7 @@ sub getRssFeedItems {
             'title'         => $title,
             'description'   => $item->get('description'),
             'link'          => $session->url->getSiteURL . $item->getUrl,
-            'pubDate'       => $session->datetime->epochToMail( $item->get('lastModified') ),
+            'pubDate'       => $session->datetime->epochToMail( $item->get('revisionDate') ),
 #            'author'        => WebGUI::User->new( $session, $item->get('ownerUserId') )->username,
             'guid'          => $session->url->getSiteURL . $item->getUrl, #$item->getId,
        };
