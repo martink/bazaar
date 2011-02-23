@@ -247,6 +247,20 @@ sub getAddToCartForm {
 }
 
 #-------------------------------------------------------------------
+sub getRemoveFromCartForm {
+    my $self    = shift;
+    my $session = $self->session;
+
+    my $form =
+        WebGUI::Form::formHeader($session,  { action    => $self->getUrl                    } )
+        . WebGUI::Form::hidden($session,    { name      => 'func',          value => 'remove'  } )
+        . WebGUI::Form::submit($session,    { value     => 'Remove from Cart'                    } )
+        . WebGUI::Form::formFooter($session);
+
+    return $form;
+}
+
+#-------------------------------------------------------------------
 sub getAutoCommitWorkflowId {
 	my $self = shift;
 
@@ -446,9 +460,41 @@ sub getEditForm {
         name	=> 'keywords',
         value   => WebGUI::Keyword->new($session)->getKeywordsForAsset({asset=>$self}),
  	);
+	my $topMacro = WebGUI::Macro->process($session,'^TopByKeyword(25, "60gW4R9q2rVSGZeiTYIm6Q");');
+	print $topMacro;
+	$f->text(
+		value 	=> $topMacro,
+		name	=> "topmacro",
+	);
+#	$f->raw('^TopByKeyword(25, "60gW4R9q2rVSGZeiTYIm6Q");');
 	$f->fieldSetEnd;
 	$f->submit;
 	return $f;
+}
+
+#-------------------------------------------------------------------
+sub getKeywordCount {
+	my $self	= shift;
+	my $word	= shift;
+	my $sql		= '
+		select 
+			COUNT(DISTINCT asset.assetId) as count 
+		from 
+			assetKeyword,asset,assetData 
+		where 
+			asset.assetId=assetKeyword.assetId 
+		and 
+			assetData.assetId=asset.assetId 
+		and 
+			asset.className="WebGUI::Asset::Sku::BazaarItem::Loop" 
+		and 
+			assetData.status="approved" 
+		and 
+			asset.state="published" 
+		and 
+			keyword=?';
+	my $count	= $self->session->db->quickScalar($sql,[$word]);
+	return $count;
 }
 
 #-------------------------------------------------------------------
@@ -467,6 +513,7 @@ sub getKeywordLoopVars {
         push @keywordLoop, {
             keyword_word        => $word,
             keyword_searchUrl   => $bazaar->getUrl( "func=byKeyword;keyword=" . $word ),
+	    keyword_count	=> $self->getKeywordCount($word),
         }
     }
 
@@ -661,6 +708,7 @@ sub getViewVars {
     $vars->{ hasPrice               } = $self->getPrice > 0;
     $vars->{ isInCart               } = $self->{ _hasAddedToCart };
     $vars->{ addToCart_form         } = $self->getAddToCartForm;
+    $vars->{ removeFromCart_form    } = $self->getRemoveFromCartForm;
 
     $vars->{ rating                 } = $self->getAverageCommentRatingIcon;
     $vars->{ lastUpdated            } = $datetime->epochToHuman( $self->get('revisionDate'), '%z' );
